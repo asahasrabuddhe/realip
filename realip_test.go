@@ -1,7 +1,7 @@
 package realip
 
 import (
-    "fmt"
+	"fmt"
 	"net/http"
 	"testing"
 )
@@ -51,10 +51,12 @@ func TestRealIP(t *testing.T) {
 
 	newRequest := func(remoteAddr, xRealIP string, xForwardedFor ...string) *http.Request {
 		h := http.Header{}
-		h.Set("X-Real-IP", xRealIP)
-        for _, address := range xForwardedFor {
-            h.Set("X-Forwarded-For", address)
-        }
+		if xRealIP != "" {
+			h.Set("X-Real-IP", xRealIP)
+		}
+		for _, address := range xForwardedFor {
+			h.Set("X-Forwarded-For", address)
+		}
 		return &http.Request{
 			RemoteAddr: remoteAddr,
 			Header:     h,
@@ -80,10 +82,10 @@ func TestRealIP(t *testing.T) {
 			request:  newRequest("", "", localAddr, publicAddr1, publicAddr2),
 			expected: publicAddr2,
 		}, {
-            name:     "Has multiple address for X-Forwarded-For",
-            request:  newRequest("", "", localAddr, fmt.Sprintf("%s,%s", publicAddr1, publicAddr2)),
-            expected: publicAddr1,
-        }, {
+			name:     "Has multiple address for X-Forwarded-For",
+			request:  newRequest("", "", localAddr, fmt.Sprintf("%s,%s", publicAddr1, publicAddr2)),
+			expected: publicAddr1,
+		}, {
 			name:     "Has X-Real-IP",
 			request:  newRequest("", publicAddr1),
 			expected: publicAddr1,
