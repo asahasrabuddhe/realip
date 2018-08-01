@@ -71,11 +71,13 @@ func FromRequest(r *http.Request) string {
 	}
 
 	// Check list of IP in X-Forwarded-For and return the first global address
-	for _, address := range xForwardedFor {
-		address = strings.TrimSpace(address)
-		isPrivate, err := isPrivateAddress(address)
-		if !isPrivate && err == nil {
-			return address
+	for _, a := range xForwardedFor {
+		for _, b := range strings.Split(a, ",") {
+			address := strings.TrimSpace(b)
+			isPrivate, err := isPrivateAddress(address)
+			if !isPrivate && err == nil {
+				return address
+			}
 		}
 	}
 

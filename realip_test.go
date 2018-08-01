@@ -1,6 +1,7 @@
 package realip
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 )
@@ -74,6 +75,14 @@ func TestRealIP(t *testing.T) {
 		}, {
 			name:     "Has X-Forwarded-For",
 			request:  newRequest("", "", publicAddr1),
+			expected: publicAddr1,
+		}, {
+			name:     "Has X-Forwarded-For multiple IPs (comma separated)(",
+			request:  newRequest("", "", fmt.Sprintf("%s,%s", localAddr, publicAddr1)),
+			expected: publicAddr1,
+		}, {
+			name:     "Has X-Forwarded-For multiple IPs (comma and then space)",
+			request:  newRequest("", "", fmt.Sprintf("%s, %s", localAddr, publicAddr1)),
 			expected: publicAddr1,
 		}, {
 			name:     "Has multiple X-Forwarded-For",
