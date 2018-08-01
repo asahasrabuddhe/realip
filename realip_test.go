@@ -52,7 +52,7 @@ func TestRealIP(t *testing.T) {
 		h := http.Header{}
 		h.Set("X-Real-IP", xRealIP)
 		for _, address := range xForwardedFor {
-			h.Set("X-Forwarded-For", address)
+			h.Add("X-Forwarded-For", address)
 		}
 
 		return &http.Request{
@@ -78,7 +78,7 @@ func TestRealIP(t *testing.T) {
 		}, {
 			name:     "Has multiple X-Forwarded-For",
 			request:  newRequest("", "", localAddr, publicAddr1, publicAddr2),
-			expected: publicAddr2,
+			expected: publicAddr1,
 		}, {
 			name:     "Has X-Real-IP",
 			request:  newRequest("", publicAddr1),
