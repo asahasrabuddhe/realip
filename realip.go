@@ -63,11 +63,11 @@ func isPrivateAddress(address string) (bool, error) {
 func FromRequest(r *http.Request) string {
 	// Fetch header value
 	xRealIP := r.Header.Get(xRealIpHeader)
-	xForwardedFor := r.Header.Get(xForwardedForHeader)
-	//forwarded := r.Header.Get(forwardedHeader)
+	xForwardedFor := r.Header[xForwardedForHeader]
+	forwarded := r.Header.Get(forwardedHeader)
 
 	// If both empty, return IP from remote address
-	if xRealIP == "" && len(xForwardedFor) == 0 {
+	if xRealIP == "" && len(xForwardedFor) == 0 && forwarded == "" {
 		var remoteIP string
 
 		// If there are colon in remote address, remove the port number
@@ -82,12 +82,28 @@ func FromRequest(r *http.Request) string {
 	}
 
 	// Check list of IP in X-Forwarded-For and return the first global address
-	for _, a := range strings.Split(xForwardedFor, ",") {
+	for _, a := range xForwardedFor {
 		for _, b := range strings.Split(a, ",") {
 			address := strings.TrimSpace(b)
 			isPrivate, err := isPrivateAddress(address)
 			if !isPrivate && err == nil {
 				return address
+			}
+		}
+	}
+
+	// Check list of IPs in the new Forwarded header and return the first global address
+	for _, a := range strings.Split(forwarded, ";") {
+		for _, b := range strings.Split(a, ",") {
+			if strings.Contains(b, "for") {
+				c := strings.Split(b, "=")
+				if len(c) == 2 {
+					address := strings.TrimRight(strings.TrimLeft(strings.TrimSpace(c[1]), `"[`), `]"`)
+					isPrivate, err := isPrivateAddress(address)
+					if !isPrivate && err == nil {
+						return address
+					}
+				}
 			}
 		}
 	}

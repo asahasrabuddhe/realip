@@ -15,7 +15,7 @@ Go package that can be used to get client's real public IP, which usually useful
 ```go
 package main
 
-import "github.com/tomasen/realip"
+import "go.ajitem.com/realip"
 
 func (h *Handler) ServeIndexPage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	clientIP := realip.FromRequest(r)
@@ -30,4 +30,4 @@ Commited code must pass:
 * [golint](https://github.com/golang/lint)
 * [go vet](https://godoc.org/golang.org/x/tools/cmd/vet)
 * [gofmt](https://golang.org/cmd/gofmt)
-* [go test](https://golang.org/cmd/go/#hdr-Test_packages):
+* [go test](https://golang.org/cmd/go/#hdr-Test_packages)

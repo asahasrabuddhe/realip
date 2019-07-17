@@ -49,13 +49,19 @@ func TestRealIP(t *testing.T) {
 		expected string
 	}
 
-	newRequest := func(remoteAddr, xRealIP string, xForwardedFor ...string) *http.Request {
+	newRequest := func(remoteAddr, xRealIP string, forwarded bool, xForwardedFor ...string) *http.Request {
 		h := http.Header{}
 		if xRealIP != "" {
 			h.Set("X-Real-IP", xRealIP)
 		}
-		for _, address := range xForwardedFor {
-			h.Add("X-Forwarded-For", address)
+		if forwarded {
+			for _, address := range xForwardedFor {
+				h.Add("Forwarded", address)
+			}
+		} else {
+			for _, address := range xForwardedFor {
+				h.Add("X-Forwarded-For", address)
+			}
 		}
 		return &http.Request{
 			RemoteAddr: remoteAddr,
@@ -66,37 +72,55 @@ func TestRealIP(t *testing.T) {
 	// Create test data
 	publicAddr1 := "144.12.54.87"
 	publicAddr2 := "119.14.55.11"
+	publicAddr3 := "13.182.55.11:8080"
+	publicAddr3Wop := "13.182.55.11"
 	localAddr := "127.0.0.0"
 
 	testData := []testIP{
 		{
 			name:     "No header",
-			request:  newRequest(publicAddr1, ""),
+			request:  newRequest(publicAddr3, "", false),
+			expected: publicAddr3Wop,
+		}, {
+			name:     "No header with port",
+			request:  newRequest(publicAddr1, "", false),
 			expected: publicAddr1,
 		}, {
 			name:     "Has X-Forwarded-For",
-			request:  newRequest("", "", publicAddr1),
+			request:  newRequest("", "", false, publicAddr1),
 			expected: publicAddr1,
 		}, {
-			name:     "Has X-Forwarded-For multiple IPs (comma separated)(",
-			request:  newRequest("", "", fmt.Sprintf("%s,%s", localAddr, publicAddr1)),
+			name:     "Has X-Forwarded-For multiple IPs (comma separated)",
+			request:  newRequest("", "", false, fmt.Sprintf("%s,%s", localAddr, publicAddr1)),
 			expected: publicAddr1,
 		}, {
 			name:     "Has X-Forwarded-For multiple IPs (comma and then space)",
-			request:  newRequest("", "", fmt.Sprintf("%s, %s", localAddr, publicAddr1)),
+			request:  newRequest("", "", false, fmt.Sprintf("%s, %s", localAddr, publicAddr1)),
 			expected: publicAddr1,
 		}, {
 			name:     "Has multiple X-Forwarded-For",
-			request:  newRequest("", "", localAddr, publicAddr1, publicAddr2),
+			request:  newRequest("", "", false, localAddr, publicAddr1, publicAddr2),
 			expected: publicAddr1,
 		}, {
 			name:     "Has multiple address for X-Forwarded-For",
-			request:  newRequest("", "", localAddr, fmt.Sprintf("%s,%s", publicAddr1, publicAddr2)),
+			request:  newRequest("", "", false, localAddr, fmt.Sprintf("%s,%s", publicAddr1, publicAddr2)),
 			expected: publicAddr1,
 		}, {
 			name:     "Has X-Real-IP",
-			request:  newRequest("", publicAddr1),
+			request:  newRequest("", "", false, publicAddr1),
 			expected: publicAddr1,
+		}, {
+			name:     "Has Forwarded",
+			request:  newRequest("", "", true, fmt.Sprintf("for=%s", publicAddr1)),
+			expected: publicAddr1,
+		}, {
+			name:     "Has multiple addresses for Forwarded (comma separated)",
+			request:  newRequest("", "", true, fmt.Sprintf("for=%s,for=%s", localAddr, publicAddr1)),
+			expected: publicAddr1,
+		}, {
+			name:     "Has multiple addresses for Forwarded (comma and then space)",
+			request:  newRequest("", "", true, fmt.Sprintf("for=%s, for=%s", localAddr, publicAddr2)),
+			expected: publicAddr2,
 		},
 	}
 
