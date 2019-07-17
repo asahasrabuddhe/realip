@@ -55,7 +55,7 @@ func TestRealIP(t *testing.T) {
 			h.Set("X-Real-IP", xRealIP)
 		}
 		for _, address := range xForwardedFor {
-			h.Set("X-Forwarded-For", address)
+			h.Add("X-Forwarded-For", address)
 		}
 		return &http.Request{
 			RemoteAddr: remoteAddr,
@@ -78,9 +78,17 @@ func TestRealIP(t *testing.T) {
 			request:  newRequest("", "", publicAddr1),
 			expected: publicAddr1,
 		}, {
+			name:     "Has X-Forwarded-For multiple IPs (comma separated)(",
+			request:  newRequest("", "", fmt.Sprintf("%s,%s", localAddr, publicAddr1)),
+			expected: publicAddr1,
+		}, {
+			name:     "Has X-Forwarded-For multiple IPs (comma and then space)",
+			request:  newRequest("", "", fmt.Sprintf("%s, %s", localAddr, publicAddr1)),
+			expected: publicAddr1,
+		}, {
 			name:     "Has multiple X-Forwarded-For",
 			request:  newRequest("", "", localAddr, publicAddr1, publicAddr2),
-			expected: publicAddr2,
+			expected: publicAddr1,
 		}, {
 			name:     "Has multiple address for X-Forwarded-For",
 			request:  newRequest("", "", localAddr, fmt.Sprintf("%s,%s", publicAddr1, publicAddr2)),
